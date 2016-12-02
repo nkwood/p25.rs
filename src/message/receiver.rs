@@ -37,7 +37,7 @@ pub trait MessageHandler {
     /// A trunking signalling packet was received.
     fn handle_tsbk(&mut self, recv: &mut DataUnitReceiver, tsbk: TSBKFields);
     /// A voice terminator packet was received, optionally with link control word.
-    fn handle_term(&mut self, recv: &mut DataUnitReceiver);
+    fn handle_term(&mut self, recv: &mut DataUnitReceiver, lc: Option<LinkControlFields>);
 }
 
 /// Internal state of the state machine.
@@ -98,7 +98,7 @@ impl MessageReceiver {
                     VoiceHeader =>
                         DecodeHeader(VoiceHeaderReceiver::new()),
                     VoiceSimpleTerminator => {
-                        handler.handle_term(&mut self.recv);
+                        handler.handle_term(&mut self.recv, None);
                         self.recv.flush_pads();
                         Idle
                     },
@@ -111,6 +111,7 @@ impl MessageReceiver {
                     TrunkingSignaling =>
                         DecodeTSBK(TSBKReceiver::new()),
                     DataPacket => {
+                        println!("\n\n\n\nDATA DATA DATA DATA\n\n\n\n");
                         self.recv.resync();
                         Idle
                     },
@@ -137,18 +138,20 @@ impl MessageReceiver {
                 None => {},
             },
             DecodeLCFrameGroup(ref mut fg) => match fg.feed(dibit) {
-                Some(Ok(event)) => match event {
-                    FrameGroupEvent::VoiceFrame(vf) => {
-                        handler.handle_frame(&mut self.recv, vf);
+                Some(Ok(event)) => {
+                    match event {
+                        FrameGroupEvent::VoiceFrame(vf) =>
+                            handler.handle_frame(&mut self.recv, vf),
+                        FrameGroupEvent::Extra(lc) =>
+                            handler.handle_lc(&mut self.recv, lc),
+                        FrameGroupEvent::DataFragment(data) =>
+                            handler.handle_data_frag(&mut self.recv, data),
+                    }
 
-                        if fg.done() {
-                            self.recv.flush_pads();
-                        }
-                    },
-                    FrameGroupEvent::Extra(lc) => handler.handle_lc(&mut self.recv, lc),
-                    FrameGroupEvent::DataFragment(data) =>
-                        handler.handle_data_frag(&mut self.recv, data),
-                },
+                    if fg.done() {
+                        self.recv.flush_pads();
+                    }
+                }
                 Some(Err(err)) => {
                     handler.handle_error(&mut self.recv, err);
                     self.recv.resync();
@@ -176,8 +179,7 @@ impl MessageReceiver {
             },
             DecodeLCTerminator(ref mut term) => match term.feed(dibit) {
                 Some(Ok(lc)) => {
-                    handler.handle_lc(&mut self.recv, lc);
-                    handler.handle_term(&mut self.recv);
+                    handler.handle_term(&mut self.recv, Some(lc));
                     self.recv.flush_pads();
                 },
                 Some(Err(err)) => {

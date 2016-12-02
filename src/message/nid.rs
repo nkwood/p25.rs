@@ -173,7 +173,7 @@ impl NIDReceiver {
         };
 
         let data = match bch::decode(buf) {
-            Some((data, err)) => data,
+            Some((data, err)) => { println!("  bch err:{}", err); data},
             None => return Some(Err(P25Error::BCHUnrecoverable)),
         };
 

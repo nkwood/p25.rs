@@ -80,7 +80,8 @@ pub mod shortened {
 
         match extended::decode(word) {
             Some((data, err)) => if data >> 6 != 0 {
-                None
+                println!("ASASASDDAS {:012b} {}", data, err);
+                Some(((data & 0x3F) as u8, err))
             } else {
                 Some((data as u8, err))
             },
@@ -387,5 +388,12 @@ mod test {
         for i in 0..1<<12 {
             assert_eq!(extended::decode(extended::encode(i)).unwrap().0, i);
         }
+    }
+
+    #[test]
+    fn test_shit() {
+        let word = 0b110001010100010100;
+
+        println!("g({:018b}) = {:?}", word, shortened::decode(word));
     }
 }

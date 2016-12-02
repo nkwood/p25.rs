@@ -130,13 +130,14 @@ impl DataUnitReceiver {
     pub fn flush_pads(&mut self) {
         match self.state {
             DecodePacket(recv) => self.state = State::flush_pads(recv),
-            Sync(_) => {},
+            Prime(_) | Sync(_) => {},
             _ => panic!("not decoding a packet"),
         }
     }
 
     /// Force the receiver into frame synchronization.
     pub fn resync(&mut self) { self.state = State::sync(); }
+    pub fn reprime(&mut self) { self.state = State::prime(); }
 
     /// Determine the next action to take based on the given sample.
     fn handle(&mut self, s: f32) -> StateChange {
@@ -151,6 +152,7 @@ impl DataUnitReceiver {
             },
             Sync(ref mut sync) => if sync.feed(power, thresh) {
                 let (p, m, n) = self.corr.thresholds();
+                println!("pos:{} mid:{} neg:{}", p, m, n);
                 Change(State::decode_nid(Decoder::new(Decider::new(p, m, n))))
             } else {
                 NoChange

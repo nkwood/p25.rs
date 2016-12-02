@@ -39,10 +39,12 @@ impl VoiceHeaderReceiver {
             None => return None,
         };
 
+        println!("golay({:018b})", buf);
+
         let data = match golay::shortened::decode(buf) {
-            Some((data, err)) => data,
+            Some((data, err)) => {println!("golay err:{}", err); data},
             // Let the following RS code attempt to fix these errors.
-            None => 0,
+            None => {println!("GIVE RS A CHANCE"); 0},
         };
 
         let hexbits = match self.hexbits.feed(Hexbit::new(data)) {

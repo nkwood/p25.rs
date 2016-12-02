@@ -157,6 +157,9 @@ impl<S: States> TrellisFSM<S> {
     }
 }
 
+/// Each cell is `Some(x)`, where `x` is a state ... if ..., or `None` if the state is ambiguous
+/// Ambiguous by default
+/// Represents an array of `Option<usize>`, whose length determines
 pub trait WalkHistory: Copy + Clone + Default +
     Deref<Target = [Option<usize>]> + DerefMut
 {
@@ -185,12 +188,16 @@ macro_rules! history_type {
     };
 }
 
-history_type!(DibitHistory, 4);
-history_type!(TribitHistory, 4);
+///
+history_type!(DibitHistory, 8);
+///
+history_type!(TribitHistory, 8);
 
+///
 pub trait Walks<H: WalkHistory>: Copy + Clone + Default +
     Deref<Target = [Walk<H>]> + DerefMut
 {
+    ///
     fn states() -> usize;
 }
 
@@ -226,7 +233,9 @@ macro_rules! impl_walks {
     };
 }
 
+///
 impl_walks!(DibitWalks, DibitHistory, 4);
+///
 impl_walks!(TribitWalks, TribitHistory, 8);
 
 /// Decodes a received convolutional code dibit stream to a nearby codeword using the
@@ -264,6 +273,7 @@ impl<S, H, W, T> ViterbiDecoder<S, H, W, T> where
         }.prime()
     }
 
+    ///
     fn prime(mut self) -> Self {
         for _ in 1..H::history() {
             self.step();
@@ -272,11 +282,14 @@ impl<S, H, W, T> ViterbiDecoder<S, H, W, T> where
         self
     }
 
+    /// Swap the current walk with the previous walk.
     fn switch_walk(&mut self) {
         std::mem::swap(&mut self.cur, &mut self.prev);
     }
 
+    /// Return `false` if the symbol source has been depleted and `true` otherwise.
     fn step(&mut self) -> bool {
+        // Create next edge from n
         let input = Edge::new(match (self.src.next(), self.src.next()) {
             (Some(hi), Some(lo)) => (hi, lo),
             (None, None) => return false,
@@ -343,10 +356,14 @@ impl<S, H, W, T> Iterator for ViterbiDecoder<S, H, W, T> where
 
 /// Decoding decision.
 enum Decision {
+    /// Symbol has been decoded definitely with the associated minimum walk distance and
+    /// walk state.
     Definite(usize, Option<usize>),
+    ///
     Ambiguous(usize),
 }
 
+/// Represents
 #[derive(Copy, Clone, Debug)]
 pub struct Walk<H: WalkHistory>{
     history: H,
@@ -370,6 +387,7 @@ impl<H: WalkHistory> Walk<H> {
         self
     }
 
+    /// Append
     pub fn append(&mut self, other: Self) {
         self.distance = other.distance;
         other.iter().cloned().collect_slice(&mut self[1..]);
@@ -408,6 +426,7 @@ impl<H: WalkHistory> Default for Walk<H> {
     fn default() -> Self { Walk::new(std::usize::MAX) }
 }
 
+///
 #[derive(Copy, Clone)]
 struct Edge(u8);
 

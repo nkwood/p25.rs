@@ -1,8 +1,17 @@
 //! Encoding and decoding of the (24, 12, 13) short, (24, 16, 9) medium, and (36, 20, 17)
 //! long Reed-Solomon codes described by P25.
 //!
-//! These algorithms are sourced from *Coding Theory and Cryptography: The Essentials*,
-//! Hankerson, Hoffman, et al, 2000.
+//! # Theory
+//!
+//! As noted in the specification, these codes are shortened from n = 63 codes by ignoring
+//! the necessary number of leading data symbols. Specifically,
+//!
+//! - (36, 20, 17) shortened from (63, 47, 17)
+//! - (24, 12, 13) shortened from (63, 51, 13)
+//! - (24, 16, 9) shortened from (63, 55, 9)
+//!
+//! g(x) = (α + x)(α<sup>2</sup> + x) ··· (α<sup>2t</sup> + x) [1, p130]. (This implies
+//! that m = 0 in the notation of [1].)
 
 use std;
 

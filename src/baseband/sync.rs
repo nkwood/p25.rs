@@ -23,12 +23,20 @@ impl MovingAverageWeight for PowerSmoothing {
     }
 }
 
+struct AvgSmoothing;
+
+impl MovingAverageWeight for AvgSmoothing {
+    fn weight() -> f32 { 0.05 }
+}
+
 /// Continuously cross-correlates input signal with frame sync fingerprint.
 pub struct SyncCorrelator {
     /// Fingerprint correlator.
     corr: FIRFilter<SyncFingerprint>,
     /// Moving average power of input signal.
     power: MovingAverage<PowerSmoothing>,
+    psmooth: MovingAverage<AvgSmoothing>,
+    nsmooth: MovingAverage<AvgSmoothing>,
 }
 
 impl SyncCorrelator {
@@ -37,6 +45,8 @@ impl SyncCorrelator {
         SyncCorrelator {
             corr: FIRFilter::new(),
             power: MovingAverage::new(0.0),
+            psmooth: MovingAverage::new(0.0),
+            nsmooth: MovingAverage::new(0.0),
         }
     }
 
@@ -60,6 +70,10 @@ impl SyncCorrelator {
             .collect_slice_checked(&mut combined[..]);
 
         let (pavg, navg) = calc_averages(&combined);
+        println!("raw {}", pavg);
+        let pavg = self.psmooth.add(pavg);
+        println!("smoothed {}", pavg);
+        let navg = self.nsmooth.add(navg);
 
         calc_thresholds(pavg, navg)
     }

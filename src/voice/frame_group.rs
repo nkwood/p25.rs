@@ -277,7 +277,7 @@ impl<E: Extra> ExtraReceiver<E> {
         let bits = match hamming::shortened::decode(buf) {
             Some((data, err)) => data,
             // Let the following RS code attempt to fix these errors.
-            None => 0,
+            None => {println!("HAMMING GIVE RS A CHANCE"); 0},
         };
 
         let hexbits = match self.hexbits.feed(Hexbit::new(bits)) {
@@ -325,7 +325,7 @@ impl DataFragmentReceiver {
         };
 
         let bits = match cyclic::decode(buf) {
-            Some((data, err)) => data,
+            Some((data, err)) => {println!("cyclic err:{}", err); data},
             None => return Some(Err(CyclicUnrecoverable)),
         };
 

@@ -40,7 +40,7 @@ impl VoiceLCTerminatorReceiver {
         let data = match golay::extended::decode(*buf as u32) {
             Some((data, err)) => data,
             // Let the following RS code attempt to correct these errors.
-            None => 0,
+            None => {println!("TERM GIVE RS A CHANCE"); 0},
         };
 
         // Each 12-bit word is turned into 2 hexbits.

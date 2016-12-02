@@ -56,7 +56,7 @@ impl VoiceFrame {
 
             let (data, err) = match hamming::standard::decode(bits as u16) {
                 Some(x) => x,
-                None => return Err(HammingUnrecoverable),
+                None => {println!("frame"); return Err(HammingUnrecoverable)},
             };
 
             errors[idx] = err;
